@@ -227,7 +227,6 @@ class LLMService:
                             model=self.model,
                             messages=messages,
                             api_key=api_key,
-                            temperature=0.7,
                             max_tokens=800
                         )
                         reply = response.choices[0].message.content
