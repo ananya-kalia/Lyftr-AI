@@ -67,6 +67,43 @@ class LLMService:
             keys.append({"key_id": "key_2", "api_key": "mock_key_2"})
 
         return keys
+        
+def _groq_inference(self, messages):
+    """Use Groq when Gemini providers fail."""
+    import os
+    import litellm
+
+    groq_key = os.getenv("GROQ_API_KEY")
+
+    if not groq_key:
+        raise ValueError("GROQ_API_KEY is not configured")
+
+    groq_model = os.getenv(
+        "GROQ_MODEL",
+        "openai/gpt-oss-120b"
+    )
+
+    response = litellm.completion(
+        model=f"groq/{groq_model}",
+        messages=messages,
+        api_key=groq_key,
+        max_tokens=800
+    )
+
+    reply = response.choices[0].message.content
+
+    input_tokens = getattr(
+        response.usage, "prompt_tokens", 0
+    ) or self.estimate_tokens(
+        m["content"] for m in messages
+    )
+
+    output_tokens = getattr(
+        response.usage, "completion_tokens", 0
+    ) or self.estimate_tokens(reply)
+
+    return reply, input_tokens, output_tokens
+
 
     def get_key_pool_status(self) -> Dict[str, Any]:
         """Return configured keys summary for health endpoint."""
